@@ -3,8 +3,8 @@ using SmartItineraryAPI.Models.Responses;
 
 namespace SmartItineraryAPI.Controllers
 {
-    [ApiController]
     [Route("api/[controller]")]
+    [ApiController]
     public class SystemController : ControllerBase
     {
         [HttpGet("health")]
