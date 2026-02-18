@@ -1,12 +1,17 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.RateLimiting;
 using SmartItineraryAPI.Application.Interfaces;
 using SmartItineraryAPI.Infrastructure.AI;
+using SmartItineraryAPI.Models.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddValidatorsFromAssemblyContaining<ItineraryRequestValidator>();
+builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IItineraryGenerator, OpenAiItineraryGenerator>();
