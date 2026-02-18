@@ -11,10 +11,13 @@ namespace SmartItineraryAPI.Infrastructure.AI
 {
     public class OpenAiItineraryGenerator(
         OpenAIClient client,
-        IOptions<OpenAiOptions> options) : IItineraryGenerator
+        IOptions<OpenAiOptions> options,
+        ILogger<OpenAiItineraryGenerator> logger) : IItineraryGenerator
     {
         private readonly OpenAIClient _client = client;
         private readonly OpenAiOptions _options = options.Value;
+        private readonly ILogger<OpenAiItineraryGenerator> _logger = logger;
+
         private static readonly string[] jsonSerializable = ["days"];
         private static readonly string[] jsonSerializableDaysArray = ["dayNumber", "plans"];
         private static readonly string[] jsonSerializablePlansArray = ["time", "activity", "price"];
@@ -114,6 +117,14 @@ namespace SmartItineraryAPI.Infrastructure.AI
                     messages,
                     options,
                     cancellationToken);
+
+            _logger.LogInformation(
+                "OpenAI request completed. Model: {Model} | Tokens used: {Tokens} | City: {City} | Days: {Days} | Budget: {Budget}",
+                _options.Model,
+                response.Value.Usage.TotalTokenCount,
+                request.City,
+                request.Days,
+                request.Budget);
 
             string content = response.Value.Content[0].Text;
 
