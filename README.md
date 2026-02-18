@@ -183,5 +183,13 @@ Adjust port mapping if your Dockerfile exposes a different port. Verify the cont
 - Swagger: Enabled in Development environment (Swagger UI available).
 - Rate limiting: A fixed-window limiter named `itinerary-policy` is configured allowing 5 requests per minute; when rejected returns HTTP 429 with a JSON error.
   - Important: ensure `UseRateLimiter()` is registered in the correct position in the pipeline.
+## Deployment / Live Demo
 
+The Smart Itinerary API is deployed and accessible online at:
+
+**https://smartitineraryapi.onrender.com**
+
+- Health check (quick test):
+
+**GET https://smartitineraryapi.onrender.com/api/system/health**
 ---
