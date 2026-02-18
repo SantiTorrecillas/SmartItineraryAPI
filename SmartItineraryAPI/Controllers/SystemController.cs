@@ -1,22 +1,21 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SmartItineraryAPI.Models.Responses;
 
-namespace SmartItineraryAPI.Controllers
+namespace SmartItineraryAPI.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+public class SystemController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class SystemController : ControllerBase
+    [HttpGet("health")]
+    public IActionResult HealthCheck()
     {
-        [HttpGet("health")]
-        public IActionResult HealthCheck()
+        return Ok(new HealthResponse
         {
-            return Ok(new HealthResponse
-            {
-                Environment = "Development",
-                Service = "Smart Itinerary API",
-                Status = "Healthy",
-                Timestamp = DateTime.UtcNow
-            });
-        }
+            Environment = "Development",
+            Service = "Smart Itinerary API",
+            Status = "Healthy",
+            Timestamp = DateTime.UtcNow
+        });
     }
 }

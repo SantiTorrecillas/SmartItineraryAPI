@@ -1,11 +1,9 @@
-﻿using SmartItineraryAPI.Application.Results;
-using SmartItineraryAPI.Models.Requests;
+﻿using SmartItineraryAPI.Models.Requests;
 using SmartItineraryAPI.Models.Responses;
 
-namespace SmartItineraryAPI.Application.Interfaces
+namespace SmartItineraryAPI.Application.Interfaces;
+
+public interface IItineraryGenerator
 {
-    public interface IItineraryGenerator
-    {
-        Task<ItineraryResponse> GenerateAsync(ItineraryRequest request, CancellationToken cancellationToken);
-    }
+    Task<ItineraryResponse> GenerateAsync(ItineraryRequest request, CancellationToken cancellationToken);
 }
