@@ -80,16 +80,16 @@ Adjust port mapping if your Dockerfile exposes a different port. Verify the cont
 1) Health
 - GET `/api/system/health`
 - Response (200):
-
-{ 
-	"environment": "Development", 
-	"service": "Smart Itinerary API", 
-	"status": "Healthy", 
-	"timestamp": "2026-02-18T12:34:56Z" 
-}
-
+	```json
+	{ 
+		"environment": "Development", 
+		"service": "Smart Itinerary API", 
+		"status": "Healthy", 
+		"timestamp": "2026-02-18T12:34:56Z" 
+	}
+   ```
 2) Generate itinerary (example)
-- POST `/api/itinenary` (controller appears named `ItinenaryController` — check the controller for exact route)
+- POST `/api/itinenary` (controller appears named `ItinenaryController` â€” check the controller for exact route)
 - Request body:
 
     ```json
