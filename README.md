@@ -182,6 +182,6 @@ Adjust port mapping if your Dockerfile exposes a different port. Verify the cont
 - Validation: `FluentValidation` validators are registered from the assembly (e.g., `ItineraryRequestValidator`).
 - Swagger: Enabled in Development environment (Swagger UI available).
 - Rate limiting: A fixed-window limiter named `itinerary-policy` is configured allowing 5 requests per minute; when rejected returns HTTP 429 with a JSON error.
-  - Important: ensure `UseRateLimiter()` is registered in the correct position in the pipeline (see Known Issues below).
+  - Important: ensure `UseRateLimiter()` is registered in the correct position in the pipeline.
 
 ---
