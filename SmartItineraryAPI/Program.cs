@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.RateLimiting;
 using SmartItineraryAPI.Application.Interfaces;
 using SmartItineraryAPI.Infrastructure.AI;
 
@@ -21,6 +22,29 @@ builder.Services.AddSingleton<OpenAI.OpenAIClient>(sp =>
     return new OpenAI.OpenAIClient(options.ApiKey);
 });
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddFixedWindowLimiter("itinerary-policy", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 5;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueLimit = 0;
+    });
+
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        context.HttpContext.Response.ContentType = "application/json";
+
+        await context.HttpContext.Response.WriteAsync(
+            """
+            {
+                "error": "Too many requests. Please try again later."
+            }
+            """,
+            token);
+    };
+});
 
 
 var app = builder.Build();
@@ -37,5 +61,7 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseRateLimiter();
 
 app.Run();
