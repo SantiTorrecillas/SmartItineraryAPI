@@ -1,16 +1,24 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using SmartItineraryAPI.Application.Interfaces;
+using SmartItineraryAPI.Models.Requests;
+using SmartItineraryAPI.Models.Responses;
 
-namespace SmartItineraryAPI.Controllers
+namespace SmartItineraryAPI.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class ItineraryController(IItineraryGenerator generator) : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class ItinenaryController : ControllerBase
+    private readonly IItineraryGenerator _generator = generator;
+
+    [HttpPost]
+    public async Task<ActionResult<ItineraryResponse>> Generate(
+        [FromBody] ItineraryRequest request,
+        CancellationToken cancellationToken)
     {
-        [HttpGet("")]
-        public IActionResult GetItinerary()
-        {
-            return Ok();
-        }
+        ItineraryResponse result =
+            await _generator.GenerateAsync(request, cancellationToken);
+
+        return Ok(result);
     }
 }

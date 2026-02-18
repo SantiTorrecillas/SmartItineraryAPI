@@ -4,5 +4,5 @@ public class ItineraryDay
 {
     public int DayNumber { get; init; }
 
-    public IReadOnlyList<PlanItem> Plans { get; init; } = new List<PlanItem>();
+    public IReadOnlyList<PlanItem> Plans { get; init; } = [];
 }

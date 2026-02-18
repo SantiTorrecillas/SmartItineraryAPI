@@ -2,10 +2,7 @@
 
 public class PlanItem
 {
-    public string Title { get; init; } = default!;
-    public string Description { get; init; } = default!;
-
-    public TimeSpan Duration { get; init; }
-
-    public decimal EstimatedPrice { get; init; }
+    public string Time { get; set; } = string.Empty;
+    public string Activity { get; set; } = string.Empty;
+    public decimal Price { get; set; }
 }
