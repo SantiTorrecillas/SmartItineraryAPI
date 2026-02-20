@@ -15,6 +15,7 @@ builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IItineraryGenerator, OpenAiItineraryGenerator>();
+builder.Services.AddMemoryCache();
 
 builder.Services.Configure<OpenAiOptions>(
     builder.Configuration.GetSection("OpenAI"));

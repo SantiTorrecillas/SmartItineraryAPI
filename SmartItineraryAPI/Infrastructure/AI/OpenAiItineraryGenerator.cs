@@ -1,10 +1,13 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Chat;
 using SmartItineraryAPI.Application.Interfaces;
 using SmartItineraryAPI.Application.Results;
 using SmartItineraryAPI.Models.Requests;
 using SmartItineraryAPI.Models.Responses;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 namespace SmartItineraryAPI.Infrastructure.AI;
@@ -12,62 +15,38 @@ namespace SmartItineraryAPI.Infrastructure.AI;
 public class OpenAiItineraryGenerator(
     OpenAIClient client,
     IOptions<OpenAiOptions> options,
-    ILogger<OpenAiItineraryGenerator> logger) : IItineraryGenerator
+    ILogger<OpenAiItineraryGenerator> logger,
+    IMemoryCache cache) : IItineraryGenerator
 {
     private readonly OpenAIClient _client = client;
     private readonly OpenAiOptions _options = options.Value;
     private readonly ILogger<OpenAiItineraryGenerator> _logger = logger;
+    private readonly IMemoryCache _cache = cache;
 
     private static readonly string[] jsonSerializable = ["days"];
     private static readonly string[] jsonSerializableDaysArray = ["dayNumber", "plans"];
     private static readonly string[] jsonSerializablePlansArray = ["time", "activity", "price"];
 
     public async Task<ItineraryResponse> GenerateAsync(
+    ItineraryRequest request,
+    CancellationToken cancellationToken)
+    {
+        string key = GenerateKey(request);
+
+        var result = await _cache.GetOrCreateAsync(key, async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(6);
+            return await GenerateFromOpenAiAsync(request, cancellationToken);
+        });
+
+        return result ?? throw new InvalidOperationException("Itinerary generator produced no result.");
+    }
+
+    public async Task<ItineraryResponse> GenerateFromOpenAiAsync(
         ItineraryRequest request,
         CancellationToken cancellationToken)
     {
-        BinaryData schema = BinaryData.FromObjectAsJson(
-        new
-        {
-            type = "object",
-            properties = new
-            {
-                days = new
-                {
-                    type = "array",
-                    minItems = request.Days,
-                    maxItems = request.Days,
-                    items = new
-                    {
-                        type = "object",
-                        properties = new
-                        {
-                            dayNumber = new { type = "integer" },
-                            plans = new
-                            {
-                                type = "array",
-                                items = new
-                                {
-                                    type = "object",
-                                    properties = new
-                                    {
-                                        time = new { type = "string" },
-                                        activity = new { type = "string" },
-                                        price = new { type = "number" }
-                                    },
-                                    required = jsonSerializablePlansArray,
-                                    additionalProperties = false
-                                }
-                            }
-                        },
-                        required = jsonSerializableDaysArray,
-                        additionalProperties = false
-                    }
-                }
-            },
-            required = jsonSerializable,
-            additionalProperties = false
-        });
+        BinaryData schema = GetSchema(request);
 
         ChatClient chatClient = _client.GetChatClient(_options.Model);
 
@@ -157,5 +136,58 @@ public class OpenAiItineraryGenerator(
         };
 
         return result;
+    }
+
+    private static BinaryData GetSchema(ItineraryRequest request)
+    {
+        return BinaryData.FromObjectAsJson(
+        new
+        {
+            type = "object",
+            properties = new
+            {
+                days = new
+                {
+                    type = "array",
+                    minItems = request.Days,
+                    maxItems = request.Days,
+                    items = new
+                    {
+                        type = "object",
+                        properties = new
+                        {
+                            dayNumber = new { type = "integer" },
+                            plans = new
+                            {
+                                type = "array",
+                                items = new
+                                {
+                                    type = "object",
+                                    properties = new
+                                    {
+                                        time = new { type = "string" },
+                                        activity = new { type = "string" },
+                                        price = new { type = "number" }
+                                    },
+                                    required = jsonSerializablePlansArray,
+                                    additionalProperties = false
+                                }
+                            }
+                        },
+                        required = jsonSerializableDaysArray,
+                        additionalProperties = false
+                    }
+                }
+            },
+            required = jsonSerializable,
+            additionalProperties = false
+        });
+    }
+
+    private static string GenerateKey(ItineraryRequest request)
+    {
+        string json = JsonSerializer.Serialize(request);
+        byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(json));
+        return $"itinerary:{Convert.ToHexString(hash)}";
     }
 }
