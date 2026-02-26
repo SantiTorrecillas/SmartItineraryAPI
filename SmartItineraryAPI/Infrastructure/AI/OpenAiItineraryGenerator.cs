@@ -56,25 +56,43 @@ public class OpenAiItineraryGenerator(
                 "You are a professional travel planner. Be concise and realistic."
             ),
            ChatMessage.CreateUserMessage(
-                $"""
+               $"""
                 Create an itinerary in {request.City}.
                 The itinerary MUST contain EXACTLY {request.Days} days.
-
-                The total estimated price of all activities across all days
-                MUST be as close as possible to the total budget of {request.Budget}.
-                You should spend at least 90% of the total budget.
-                Do not significantly under-spend the budget.
-
+                
+                The total estimated price of all activities should aim to be close
+                to the total budget of {request.Budget}, spending at least 90%
+                ONLY IF it is realistic.
+                
+                IMPORTANT:
+                - Realism ALWAYS has priority over matching the budget.
+                - Do NOT invent or inflate prices.
+                - If the budget cannot be fully spent realistically, spend as much
+                  as possible on valid premium activities and stop.
+                
+                Price constraints:
+                - Breakfast / coffee / snacks: max 30 USD
+                - Lunch: max 60 USD
+                - Dinner: max 100 USD
+                - Premium dinner (Michelin / tasting menu): max 300 USD
+                - Museums / attractions: max 80 USD
+                - Half-day guided tours: max 150 USD
+                - Full-day guided tours: max 300 USD
+                - Local transport per day: max 50 USD
+                
+                If extra budget remains, prioritize:
+                - Fine dining
+                - Private tours
+                - Day trips
+                - Luxury experiences
+                
+                Do NOT increase prices of basic activities to absorb budget.
+                
                 The "days" array MUST contain exactly {request.Days} objects.
                 Each object must have:
-                - dayNumber (starting at 1 and sequential)
-                - plans (array with at least 3 activities)
-
-                Prices must be realistic for the city.
-                Distribute the budget logically across all days.
-
-                Do not return fewer days.
-                Do not return more days.
+                - dayNumber (starting at 1)
+                - plans (at least 3 activities)
+                
                 Return only valid JSON.
                 """
             )
