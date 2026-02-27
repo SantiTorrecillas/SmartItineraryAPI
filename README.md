@@ -12,6 +12,8 @@ A small ASP.NET Core Web API that demonstrates integrating with an AI provider (
 - [Docker](#docker)
 - [API Endpoints](#api-endpoints)
 - [Behavior & middleware](#behavior--middleware)
+- [Caching](#caching)
+- [Frontend demo](#frontend-demo)
 
 ---
 
@@ -65,11 +67,15 @@ The API reads `OpenAI:ApiKey` and `OpenAI:Model`.
 
 Build the image:
 
+```
 docker build -t smart-itinerary-api .
+```
 
 Run container (map container port 80 to host 8080 and provide OpenAI key):
 
+```
 docker run -e "OpenAI__ApiKey=<YOUR_API_KEY>" -p 8080:80 --rm smart-itinerary-api
+```
 
 Adjust port mapping if your Dockerfile exposes a different port. Verify the container receives the `OpenAI__ApiKey` environment variable; ASP.NET configuration will bind it to `OpenAI:ApiKey`.
 
@@ -105,73 +111,7 @@ Adjust port mapping if your Dockerfile exposes a different port. Verify the cont
     {
         "city": "Rome",
         "days": 3,
-        "daysPlan": [
-            {
-                "dayNumber": 1,
-                "plans": [
-                    {
-                        "title": "Visit the Colosseum",
-                        "description": "Scheduled at 09:00",
-                        "estimatedPrice": 18
-                    },
-                    {
-                        "title": "Lunch at a local trattoria",
-                        "description": "Scheduled at 12:00",
-                        "estimatedPrice": 25
-                    },
-                    {
-                        "title": "Explore Roman Forum and Palatine Hill",
-                        "description": "Scheduled at 14:00",
-                        "estimatedPrice": 22
-                    }
-                ]
-            },
-            {
-                "dayNumber": 2,
-                "plans": [
-                    {
-                        "title": "Visit Vatican Museums and Sistine Chapel",
-                        "description": "Scheduled at 09:00",
-                        "estimatedPrice": 30
-                    },
-                    {
-                        "title": "Lunch near Vatican City",
-                        "description": "Scheduled at 12:30",
-                        "estimatedPrice": 20
-                    },
-                    {
-                        "title": "St. Peter's Basilica visit and climb dome",
-                        "description": "Scheduled at 14:00",
-                        "estimatedPrice": 10
-                    }
-                ]
-            },
-            {
-                "dayNumber": 3,
-                "plans": [
-                    {
-                        "title": "Walking tour of Trastevere",
-                        "description": "Scheduled at 09:00",
-                        "estimatedPrice": 15
-                    },
-                    {
-                        "title": "Lunch in Trastevere",
-                        "description": "Scheduled at 12:00",
-                        "estimatedPrice": 30
-                    },
-                    {
-                        "title": "Visit Pantheon and Piazza Navona",
-                        "description": "Scheduled at 14:00",
-                        "estimatedPrice": 5
-                    },
-                    {
-                        "title": "Gelato tasting in a famous gelateria",
-                        "description": "Scheduled at 16:00",
-                        "estimatedPrice": 10
-                    }
-                ]
-            }
-        ]
+        "daysPlan": [ /* ... */ ]
     }
     ```
 
@@ -182,7 +122,25 @@ Adjust port mapping if your Dockerfile exposes a different port. Verify the cont
 - Validation: `FluentValidation` validators are registered from the assembly (e.g., `ItineraryRequestValidator`).
 - Swagger: Enabled in Development environment (Swagger UI available).
 - Rate limiting: A fixed-window limiter named `itinerary-policy` is configured allowing 5 requests per minute; when rejected returns HTTP 429 with a JSON error.
-  - Important: ensure `UseRateLimiter()` is registered in the correct position in the pipeline.
+  - Important: ensure `UseRateLimiter()` is registered in the correct position in the pipeline (before `MapControllers()`).
+
+## Caching
+
+The API uses `IMemoryCache` to cache AI-generated itineraries and reduce repeated calls to the OpenAI service for identical requests.
+
+- Key generation: cache keys are derived from a SHA-256 hash of the serialized `ItineraryRequest` to create a deterministic key: `itinerary:{hex-sha256(serialized-request)}`.
+- Storage & TTL: the current implementation stores `ItineraryResponse` objects and sets an absolute expiration of six hours (`entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(6)`).
+- Concurrency: `IMemoryCache.GetOrCreateAsync` is used to prevent duplicate concurrent fetches for the same key. Ensure the factory handles exceptions/cancellations to avoid caching failed results.
+- Scaling: for multi-instance deployments use a distributed cache (e.g., Redis) instead of `IMemoryCache` to share cached data across instances.
+
+## Frontend demo
+
+A simple frontend is available to try the API in a browser:
+
+- Frontend URL: https://smart-itinerary-front-end.vercel.app/
+
+---
+
 ## Deployment / Live Demo
 
 The Smart Itinerary API is deployed and accessible online at:
